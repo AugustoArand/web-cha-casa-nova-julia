@@ -22,31 +22,101 @@
         <h3 class="gift-card__name">{{ gift.name }}</h3>
         <p class="gift-card__desc">{{ gift.desc }}</p>
         <span class="gift-card__link">Ver produto →</span>
+
+        <!-- Estado: disponível -->
         <button
-          class="gift-card__btn"
-          :class="{ 'gift-card__btn--gifted': giftedIds.has(gift.id) }"
-          @click.stop="toggleGifted(gift.id)"
+          v-if="!giftState[gift.id]?.gifted"
+          class="gift-card__btn gift-card__btn--available"
+          @click.stop="openModal(gift.id)"
         >
-          <span v-if="!giftedIds.has(gift.id)">✅ Disponível</span>
-          <span v-else>🎁 Já foi presenteado</span>
+          ✅ Disponível
         </button>
+
+        <!-- Estado: reservado -->
+        <div v-else class="gift-card__reserved">
+          <span class="gift-card__reserved-label">🎁 Reservado por <strong>{{ giftState[gift.id].claimedBy }}</strong></span>
+          <button class="gift-card__btn gift-card__btn--release" @click.stop="releaseGift(gift.id)">
+            Liberar
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Modal de nome -->
+    <Transition name="modal">
+      <div v-if="modal.open" class="modal-overlay" @click.self="closeModal">
+        <div class="modal">
+          <p class="modal__title">🎁 Reservar presente</p>
+          <p class="modal__desc">Qual é o seu nome?</p>
+          <input
+            ref="nameInput"
+            v-model="modal.name"
+            class="modal__input"
+            placeholder="Ex: Ana"
+            maxlength="40"
+            @keyup.enter="confirmGift"
+          />
+          <div class="modal__actions">
+            <button class="modal__btn modal__btn--cancel" @click="closeModal">Cancelar</button>
+            <button class="modal__btn modal__btn--confirm" @click="confirmGift" :disabled="!modal.name.trim()">
+              Confirmar
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </section>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive, nextTick, onMounted, onUnmounted } from 'vue'
+import { db } from '../firebase.js'
+import { ref as dbRef, onValue, set } from 'firebase/database'
 
-const STORAGE_KEY = 'cha-casa-gifted'
-const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-const giftedIds = ref(new Set(saved))
+// — Firebase real-time state —
+const giftState = reactive({}) // { [giftId]: { gifted: bool, claimedBy: string } }
 
-function toggleGifted(id) {
-  const updated = new Set(giftedIds.value)
-  updated.has(id) ? updated.delete(id) : updated.add(id)
-  giftedIds.value = updated
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...updated]))
+const giftsDbRef = dbRef(db, 'gifts')
+let unsubscribe = null
+
+onMounted(() => {
+  unsubscribe = onValue(giftsDbRef, (snapshot) => {
+    const data = snapshot.val() || {}
+    Object.keys(giftState).forEach(k => delete giftState[k])
+    Object.assign(giftState, data)
+  })
+})
+
+onUnmounted(() => {
+  if (unsubscribe) unsubscribe()
+})
+
+// — Modal —
+const modal = reactive({ open: false, giftId: null, name: '' })
+const nameInput = ref(null)
+
+function openModal(giftId) {
+  modal.giftId = giftId
+  modal.name = ''
+  modal.open = true
+  nextTick(() => nameInput.value?.focus())
+}
+
+function closeModal() {
+  modal.open = false
+  modal.giftId = null
+  modal.name = ''
+}
+
+async function confirmGift() {
+  const name = modal.name.trim()
+  if (!name) return
+  await set(dbRef(db, `gifts/${modal.giftId}`), { gifted: true, claimedBy: name })
+  closeModal()
+}
+
+async function releaseGift(giftId) {
+  await set(dbRef(db, `gifts/${giftId}`), { gifted: false, claimedBy: null })
 }
 
 function openUrl(url) {
@@ -245,21 +315,19 @@ const gifts = [
   transform: translateY(0);
 }
 
-/* Toggle button */
+/* Buttons */
 .gift-card__btn {
   margin-top: auto;
   width: 100%;
   padding: 0.42rem 0.5rem;
   border-radius: 8px;
-  border: 1.5px solid #5cb85c;
-  background: #5cb85c;
-  color: #fff;
   font-family: 'Lato', sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.18s ease;
+  transition: filter 0.22s ease, transform 0.18s ease;
   white-space: nowrap;
+  border: none;
 }
 
 .gift-card__btn:hover {
@@ -267,16 +335,145 @@ const gifts = [
   transform: scale(1.03);
 }
 
-/* Gifted state — muted purple outline */
-.gift-card__btn--gifted {
-  background: transparent;
-  border-color: rgba(176, 142, 224, 0.6);
-  color: #8b5fc0;
+.gift-card__btn--available {
+  background: #5cb85c;
+  color: #fff;
 }
 
-.gift-card:hover .gift-card__link {
-  opacity: 1;
-  transform: translateY(0);
+.gift-card__btn--release {
+  background: transparent;
+  border: 1.5px solid rgba(176,142,224,0.6);
+  color: #8b5fc0;
+  font-size: 0.68rem;
+  padding: 0.3rem 0.8rem;
+  margin-top: 0.4rem;
+  width: auto;
+}
+
+/* Reserved state block */
+.gift-card__reserved {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.gift-card__reserved-label {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.73rem;
+  color: #5a3d80;
+  background: rgba(176,142,224,0.12);
+  border-radius: 8px;
+  padding: 0.35rem 0.6rem;
+  width: 100%;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ---- Modal ---- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(46, 32, 64, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 2rem 2rem 1.6rem;
+  width: min(380px, 92vw);
+  box-shadow: 0 24px 60px rgba(124,77,170,0.25);
+  text-align: center;
+}
+
+.modal__title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  color: #2e2040;
+  margin-bottom: 0.3rem;
+}
+
+.modal__desc {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.9rem;
+  color: #8870a8;
+  margin-bottom: 1.2rem;
+}
+
+.modal__input {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border: 1.5px solid rgba(176,142,224,0.5);
+  border-radius: 10px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.95rem;
+  color: #2e2040;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 1.2rem;
+}
+
+.modal__input:focus {
+  border-color: #8b5fc0;
+}
+
+.modal__actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+}
+
+.modal__btn {
+  padding: 0.55rem 1.4rem;
+  border-radius: 10px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: filter 0.2s, transform 0.15s;
+}
+
+.modal__btn:hover {
+  filter: brightness(0.93);
+  transform: scale(1.02);
+}
+
+.modal__btn--cancel {
+  background: #f0eaff;
+  color: #7c4daa;
+}
+
+.modal__btn--confirm {
+  background: #7c4daa;
+  color: #fff;
+}
+
+.modal__btn--confirm:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Modal transition */
+.modal-enter-active, .modal-leave-active {
+  transition: opacity 0.25s ease;
+}
+.modal-enter-active .modal, .modal-leave-active .modal {
+  transition: transform 0.25s ease;
+}
+.modal-enter-from, .modal-leave-to {
+  opacity: 0;
+}
+.modal-enter-from .modal, .modal-leave-to .modal {
+  transform: scale(0.92);
 }
 
 /* Responsive */
