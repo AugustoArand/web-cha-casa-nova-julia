@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="32" fill="#f0eaff"/>
+
+  <!-- House body -->
+  <rect x="16" y="30" width="32" height="22" rx="2" fill="#7c4daa"/>
+
+  <!-- Roof -->
+  <polygon points="10,32 32,12 54,32" fill="#b08ee0"/>
+
+  <!-- Door -->
+  <rect x="26" y="40" width="12" height="12" rx="2" fill="#e8deff"/>
+
+  <!-- Door knob -->
+  <circle cx="36" cy="46" r="1.2" fill="#7c4daa"/>
+
+  <!-- Window left -->
+  <rect x="17" y="34" width="8" height="7" rx="1.5" fill="#e8deff"/>
+  <!-- Window cross -->
+  <line x1="21" y1="34" x2="21" y2="41" stroke="#b08ee0" stroke-width="0.8"/>
+  <line x1="17" y1="37.5" x2="25" y2="37.5" stroke="#b08ee0" stroke-width="0.8"/>
+
+  <!-- Window right -->
+  <rect x="39" y="34" width="8" height="7" rx="1.5" fill="#e8deff"/>
+  <!-- Window cross -->
+  <line x1="43" y1="34" x2="43" y2="41" stroke="#b08ee0" stroke-width="0.8"/>
+  <line x1="39" y1="37.5" x2="47" y2="37.5" stroke="#b08ee0" stroke-width="0.8"/>
+
+  <!-- Chimney -->
+  <rect x="40" y="14" width="5" height="10" rx="1" fill="#7c4daa"/>
+
+  <!-- Smoke puff -->
+  <circle cx="42" cy="12" r="2.5" fill="#e8deff" opacity="0.8"/>
+  <circle cx="44.5" cy="10" r="2" fill="#e8deff" opacity="0.6"/>
+  <circle cx="46.5" cy="8.5" r="1.5" fill="#e8deff" opacity="0.4"/>
+</svg>
