@@ -32,12 +32,10 @@
           ✅ Disponível
         </button>
 
-        <!-- Estado: reservado -->
+
+        <!-- Estado: reservado (bloqueado) -->
         <div v-else class="gift-card__reserved">
           <span class="gift-card__reserved-label">🎁 Reservado por <strong>{{ giftState[gift.id].claimedBy }}</strong></span>
-          <button class="gift-card__btn gift-card__btn--release" @click.stop="releaseGift(gift.id)">
-            Liberar
-          </button>
         </div>
       </div>
     </div>

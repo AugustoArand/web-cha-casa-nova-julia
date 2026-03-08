@@ -18,7 +18,7 @@
           <span class="hero__detail-icon">📅</span>
           <div>
             <strong>Data</strong>
-            <p>Sábado, 22 de Março de 2026</p>
+            <p>Sábado, 28 de Março de 2026</p>
           </div>
         </div>
         <div class="hero__detail-sep"></div>
@@ -34,7 +34,7 @@
           <span class="hero__detail-icon">📍</span>
           <div>
             <strong>Endereço</strong>
-            <p>Rua das Flores, 142 — Apto 304<br />Bairro Jardim Primavera, Salvador - BA </p>
+            <p>Alameda Praia de Caravelas, Quadra D Lote 19<br />Condomínio Porto dos Coqueiros - Stella Maris</p>
           </div>
         </div>
       </div>

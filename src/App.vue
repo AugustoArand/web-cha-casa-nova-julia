@@ -1,14 +1,18 @@
 <template>
+  <HeaderNav />
   <main>
     <HeroSection />
     <GiftsSection />
+    <PixSection />
     <ThanksSection />
   </main>
 </template>
 
 <script setup>
+import HeaderNav from './components/HeaderNav.vue'
 import HeroSection from './components/HeroSection.vue'
 import GiftsSection from './components/GiftsSection.vue'
+import PixSection from './components/PixSection.vue'
 import ThanksSection from './components/ThanksSection.vue'
 </script>
 
